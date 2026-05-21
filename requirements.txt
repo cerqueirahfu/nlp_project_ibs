@@ -1,0 +1,17 @@
+# Price Pulse — Python 3.11
+# Dashboard
+streamlit>=1.32
+
+# Data
+pandas>=2.1
+numpy>=1.26
+scikit-learn>=1.4
+
+# NLP — SetFit ABSA pipeline
+setfit[absa]>=1.0.3
+transformers>=4.40
+torch>=2.2
+huggingface_hub>=0.23
+
+# Text preprocessing
+nltk>=3.8

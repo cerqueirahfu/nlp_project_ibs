@@ -1,0 +1,12 @@
+nlpenv/
+__pycache__/
+*.pyc
+.env
+.vscode/
+claude.md
+data/models/
+models/setfit_absa/
+
+*.pkl
+*.bin
+*.safetensors
