@@ -6,6 +6,7 @@ streamlit>=1.32
 pandas>=2.1
 numpy>=1.26
 scikit-learn>=1.4
+pyarrow>=15.0   # parquet writer for results.parquet
 
 # NLP — SetFit ABSA pipeline
 setfit[absa]>=1.0.3

@@ -63,6 +63,11 @@ def main() -> None:
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--epochs", type=int, default=1)
     parser.add_argument("--batch-size", type=int, default=16)
+    parser.add_argument("--num-iterations", type=int, default=3,
+                        help="SetFit contrastive iterations. Default 3 keeps CPU "
+                             "training to ~30 min; SetFit's own default of 20 takes hours.")
+    parser.add_argument("--max-samples", type=int, default=None,
+                        help="Cap training set size. Useful for a fast first pass.")
     args = parser.parse_args()
 
     labels = load_labels(Path(args.labels))
@@ -72,9 +77,14 @@ def main() -> None:
     shuffled = labels.sample(frac=1.0, random_state=args.seed).reset_index(drop=True)
     shuffled = shuffled.rename(columns={"polarity": "label"})
     cut = max(1, int(len(shuffled) * (1 - args.test_size)))
-    train_ds = Dataset.from_pandas(shuffled.iloc[:cut].reset_index(drop=True))
-    eval_ds = Dataset.from_pandas(shuffled.iloc[cut:].reset_index(drop=True))
-    print(f"Train: {len(train_ds)} rows | Eval: {len(eval_ds)} rows")
+    train_df = shuffled.iloc[:cut].reset_index(drop=True)
+    eval_df = shuffled.iloc[cut:].reset_index(drop=True)
+    if args.max_samples is not None and len(train_df) > args.max_samples:
+        train_df = train_df.sample(args.max_samples, random_state=args.seed).reset_index(drop=True)
+    train_ds = Dataset.from_pandas(train_df)
+    eval_ds = Dataset.from_pandas(eval_df)
+    print(f"Train: {len(train_ds)} rows | Eval: {len(eval_ds)} rows | "
+          f"num_iterations={args.num_iterations}")
 
     model = AbsaModel.from_pretrained(
         ASPECT_MODEL_ID,
@@ -87,6 +97,7 @@ def main() -> None:
         output_dir=str(LOCAL_POLARITY_PATH / "checkpoints"),
         num_epochs=args.epochs,
         batch_size=args.batch_size,
+        num_iterations=args.num_iterations,
         eval_strategy="epoch",
         save_strategy="no",
         load_best_model_at_end=False,

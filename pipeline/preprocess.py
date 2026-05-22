@@ -4,6 +4,8 @@ CARRY_COLS = (
     "product_id",
     "product_name",
     "main_category",
+    "sub_category_1",
+    "sub_category_2",
     "discount_percentage",
     "discount_group",
     "rating",

@@ -10,3 +10,6 @@ models/setfit_absa/
 *.pkl
 *.bin
 *.safetensors
+
+# AWS / SSH keys — never commit
+*.pem
