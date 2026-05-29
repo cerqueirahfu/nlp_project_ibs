@@ -35,6 +35,7 @@ GROUP_COLS = [
     "discount_group", "aspect",
 ]
 POLARITIES = ("positive", "negative", "neutral")
+CHUNK_SIZE = 500  # sentences per ABSA batch; controls how often progress prints
 
 PRODUCT_COLS = [
     "product_id", "product_name", "category",
@@ -81,8 +82,20 @@ def main() -> None:
     sentences_df = explode_sentences(df)
     print(f"[{time.time()-t0:5.1f}s] exploded to {len(sentences_df)} sentences")
 
-    print(f"[{time.time()-t0:5.1f}s] running ABSA inference...")
-    preds = predict(sentences_df["sentence"].tolist())
+    sentences = sentences_df["sentence"].tolist()
+    n = len(sentences)
+    print(f"[{time.time()-t0:5.1f}s] running ABSA inference on {n} sentences "
+          f"in chunks of {CHUNK_SIZE}...")
+    preds: list = []
+    for start in range(0, n, CHUNK_SIZE):
+        chunk = sentences[start:start + CHUNK_SIZE]
+        preds.extend(predict(chunk))
+        done = start + len(chunk)
+        elapsed = time.time() - t0
+        rate = done / elapsed if elapsed else 0
+        eta = (n - done) / rate if rate else 0
+        print(f"[{elapsed:5.1f}s] ABSA {done}/{n} ({done/n*100:4.1f}%) "
+              f"~{rate:.0f} sent/s, eta {eta/60:4.1f} min", flush=True)
     spans_df = attach_predictions(sentences_df, preds)
     print(f"[{time.time()-t0:5.1f}s] {len(spans_df)} aspect spans after keyword filter")
 

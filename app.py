@@ -18,6 +18,8 @@ sys.path.insert(0, str(ROOT))
 import pandas as pd
 import streamlit as st
 
+from ai.bedrock_client import BedrockError, available
+from ai.insights import summarize
 from utils.helpers import (
     ALL,
     DISCOUNT_TIERS,
@@ -135,6 +137,20 @@ def main() -> None:
         f"{neg_share*100:.0f}% negative",
         delta_color="inverse",
     )
+
+    scope_label = f"{crumbs} | tiers: {', '.join(selected_tiers) or 'none'}"
+    if available():
+        if st.button("✨ Generate AI insight summary"):
+            with st.spinner("Asking the model…"):
+                try:
+                    st.markdown(summarize(filtered, scope_label))
+                except BedrockError as exc:
+                    st.error(str(exc))
+    else:
+        st.caption(
+            "✨ AI insight summary is available once AWS Bedrock access is "
+            "configured (see EC2_DEPLOYMENT_GUIDE.md)."
+        )
 
     st.markdown("---")
 

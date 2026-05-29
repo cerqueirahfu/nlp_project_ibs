@@ -16,3 +16,6 @@ huggingface_hub>=0.23
 
 # Text preprocessing
 nltk>=3.8
+
+# AWS — S3 results + Bedrock AI features (EC2 only; harmless locally)
+boto3>=1.34
