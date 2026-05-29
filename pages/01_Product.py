@@ -6,14 +6,18 @@ full metadata + aspect-level sentiment broken out across discount tiers.
 from __future__ import annotations
 
 from pathlib import Path
+import re
 import sys
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
+import altair as alt
 import pandas as pd
 import streamlit as st
 
+from ai.bedrock_client import BedrockError, available
+from ai.insights import summarize_reviews
 from utils.helpers import (
     ALL,
     apply_brand_css,
@@ -21,6 +25,27 @@ from utils.helpers import (
     load_results,
     require_data,
 )
+
+_URL_RE = re.compile(r"https?://\S+")
+
+
+def _strip_urls(text: str) -> str:
+    return _URL_RE.sub("", str(text)).strip()
+
+
+def _split_titles(text: str) -> list[str]:
+    return [t.strip() for t in str(text).split(",") if t.strip()]
+
+
+TITLE_LIMIT = 70
+
+
+def _shorten(name: str, limit: int = TITLE_LIMIT) -> str:
+    """Trim a long product name to `limit` chars on a word boundary, add '…'."""
+    name = str(name).strip()
+    if len(name) <= limit:
+        return name
+    return name[:limit].rsplit(" ", 1)[0] + "…"
 
 
 def _filter_products(products: pd.DataFrame) -> pd.DataFrame:
@@ -74,15 +99,19 @@ def main() -> None:
     product_id = label_to_id[pick]
     row = products[products["product_id"] == product_id].iloc[0]
 
-    st.title(row["product_name"])
-    st.caption(row["category"])
+    full_name = str(row["product_name"]).strip()
+    st.subheader(_shorten(full_name))
+    if len(full_name) > TITLE_LIMIT:
+        st.caption(full_name)
+    crumbs = " › ".join(p for p in str(row["category"]).split("|") if p)
+    st.caption(crumbs)
 
     c1, c2, c3, c4 = st.columns(4)
-    c1.metric("Discounted price", f"₹{row['discounted_price']:,.0f}")
-    c2.metric("Actual price", f"₹{row['actual_price']:,.0f}",
+    c1.metric("Discounted price", f"{row['discounted_price']:,.0f}",
               f"-{row['discount_percentage']}%", delta_color="inverse")
+    c2.metric("Actual price", f"{row['actual_price']:,.0f}")
     c3.metric("Rating", f"{row['rating']:.1f} ★",
-              f"{int(row['rating_count']):,} reviews")
+              f"{int(row['rating_count']):,} ratings")
     c4.metric("Discount tier", str(row["discount_group"]))
 
     st.markdown("---")
@@ -119,16 +148,71 @@ def main() -> None:
         with right:
             st.subheader("Sentiment shape")
             counts = product_spans[["positive", "negative", "neutral"]].sum()
-            st.bar_chart(counts.rename("mentions"))
+            shape_df = pd.DataFrame({
+                "Sentiment": ["Positive", "Negative", "Neutral"],
+                "Mentions": [
+                    counts["positive"], counts["negative"], counts["neutral"],
+                ],
+            })
+            chart = (
+                alt.Chart(shape_df)
+                .mark_bar()
+                .encode(
+                    x=alt.X("Sentiment:N", title="Sentiment",
+                            sort=["Positive", "Negative", "Neutral"]),
+                    y=alt.Y("Mentions:Q", title="Mentions"),
+                    color=alt.Color(
+                        "Sentiment:N",
+                        scale=alt.Scale(
+                            domain=["Positive", "Negative", "Neutral"],
+                            range=["#1EBDA4", "#E4572E", "#94A3B8"],
+                        ),
+                        legend=None,
+                    ),
+                    tooltip=[
+                        alt.Tooltip("Sentiment:N", title="Sentiment"),
+                        alt.Tooltip("Mentions:Q", title="Mentions",
+                                    format=".0f"),
+                    ],
+                )
+            )
+            st.altair_chart(chart, use_container_width=True)
 
     st.markdown("---")
-    st.subheader("Review excerpts")
-    if isinstance(row.get("review_title"), str) and row["review_title"].strip():
-        st.markdown("**Titles:**")
-        st.write(row["review_title"])
-    if isinstance(row.get("review_content"), str) and row["review_content"].strip():
-        with st.expander("Full review content", expanded=False):
-            st.write(row["review_content"])
+    st.subheader("What customers say")
+
+    titles = row.get("review_title")
+    content = row.get("review_content")
+    has_titles = isinstance(titles, str) and titles.strip()
+    has_content = isinstance(content, str) and content.strip()
+
+    if not (has_titles or has_content):
+        st.caption("No review text available for this product.")
+        return
+
+    if available():
+        if st.button("✨ Summarize customer reviews"):
+            with st.spinner("Reading the reviews…"):
+                try:
+                    st.markdown(
+                        summarize_reviews(full_name, titles or "", content or "")
+                    )
+                except BedrockError as exc:
+                    st.error(str(exc))
+    else:
+        st.caption(
+            "✨ AI review summary (Pros / Cons) appears here once AWS Bedrock is "
+            "configured (see EC2_DEPLOYMENT_GUIDE.md). Raw reviews below."
+        )
+
+    with st.expander("See raw customer reviews", expanded=not available()):
+        if has_titles:
+            st.markdown("**Highlights**")
+            for title in _split_titles(titles):
+                st.markdown(f"- {title}")
+        if has_content:
+            st.markdown("**Full review text**")
+            st.write(_strip_urls(content))
 
 
 if __name__ == "__main__":

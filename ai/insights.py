@@ -82,6 +82,36 @@ def summarize(filtered: pd.DataFrame, scope_label: str) -> str:
     )
 
 
+REVIEW_SYSTEM = (
+    "You summarize Amazon customer reviews for a single product. The input is "
+    "several reviews concatenated together and may contain stray commas, image "
+    "URLs, or sentence fragments — ignore that noise. Summarize ONLY what "
+    "reviewers actually say; never invent features, praise, or complaints."
+)
+
+
+def summarize_reviews(product_name: str, titles: str, content: str) -> str:
+    """Turn the raw concatenated review blob into clean Pros / Cons / Takeaway.
+
+    The blob is capped to keep token use bounded; the model is told to ignore
+    the URL/comma noise inherent in this dataset.
+    """
+    blob = f"Review titles: {titles}\n\nReview text: {content}".strip()[:6000]
+    prompt = (
+        f"Product: {product_name}\n\n{blob}\n\n"
+        "Summarize the customer reviews as markdown with exactly these parts:\n"
+        "**👍 Pros** — up to 4 short bullets of what customers liked.\n"
+        "**👎 Cons** — up to 4 short bullets of complaints (write "
+        "'No clear complaints mentioned.' if there are none).\n"
+        "**Takeaway** — one sentence overall verdict."
+    )
+    return complete(
+        [{"role": "user", "content": prompt}],
+        system=REVIEW_SYSTEM,
+        max_tokens=400,
+    )
+
+
 def chat(history: list[dict], filtered: pd.DataFrame, scope_label: str) -> str:
     """Answer a chat turn grounded in the current filter's aggregates.
 

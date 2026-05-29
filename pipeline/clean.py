@@ -24,6 +24,11 @@ KEEP_COLS = [
     "rating", "rating_count", "review_title", "review_content",
 ]
 
+# The ABSA aspect/polarity models are trained for electronics-style reviews,
+# so we scope the dataset to these two top-level categories. The raw Amazon
+# Sales Dataset also contains Home&Kitchen, OfficeProducts, etc. — excluded.
+ALLOWED_MAIN_CATEGORIES = ("Electronics", "Computers&Accessories")
+
 
 def _clean_text(text: object) -> str:
     if pd.isna(text):
@@ -68,6 +73,8 @@ def load_clean_df(csv_path: Path | str) -> pd.DataFrame:
     data["main_category"] = category_parts.str[0]
     data["sub_category_1"] = category_parts.str[1]
     data["sub_category_2"] = category_parts.str[2]
+
+    data = data[data["main_category"].isin(ALLOWED_MAIN_CATEGORIES)]
 
     df = data[KEEP_COLS].copy()
     df["discount_amount"] = df["actual_price"] - df["discounted_price"]

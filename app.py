@@ -15,6 +15,7 @@ import sys
 ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT))
 
+import altair as alt
 import pandas as pd
 import streamlit as st
 
@@ -165,10 +166,39 @@ def main() -> None:
             .sum()
             .reset_index()
         )
-        by_tier["positive %"] = (by_tier["positive"] / by_tier["total"].clip(lower=1)) * 100
-        by_tier["negative %"] = (by_tier["negative"] / by_tier["total"].clip(lower=1)) * 100
-        chart_df = by_tier.set_index("discount_group")[["positive %", "negative %"]]
-        st.bar_chart(chart_df)
+        by_tier["Positive"] = (by_tier["positive"] / by_tier["total"].clip(lower=1)) * 100
+        by_tier["Negative"] = (by_tier["negative"] / by_tier["total"].clip(lower=1)) * 100
+        tier_long = by_tier.melt(
+            id_vars="discount_group",
+            value_vars=["Positive", "Negative"],
+            var_name="Sentiment",
+            value_name="Share",
+        )
+        chart = (
+            alt.Chart(tier_long)
+            .mark_bar()
+            .encode(
+                x=alt.X("discount_group:N", title="Discount tier",
+                        sort=list(DISCOUNT_TIERS)),
+                xOffset="Sentiment:N",
+                y=alt.Y("Share:Q", title="Share of mentions (%)"),
+                color=alt.Color(
+                    "Sentiment:N",
+                    scale=alt.Scale(
+                        domain=["Positive", "Negative"],
+                        range=["#1EBDA4", "#E4572E"],
+                    ),
+                    title="Sentiment",
+                ),
+                tooltip=[
+                    alt.Tooltip("discount_group:N", title="Discount tier"),
+                    alt.Tooltip("Sentiment:N", title="Sentiment"),
+                    alt.Tooltip("Share:Q", title="Share of mentions (%)",
+                                format=".0f"),
+                ],
+            )
+        )
+        st.altair_chart(chart, use_container_width=True)
 
     with right:
         st.subheader("Aspect-based insights")

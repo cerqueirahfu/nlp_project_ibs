@@ -29,6 +29,25 @@ SIDEBAR_CSS = """
 [data-testid="stSidebar"] [data-testid="stCaptionContainer"] {
     color: #F5F0E8 !important;
 }
+/* Page navigation links (app / Product / AI Chat) — were navy-on-navy */
+[data-testid="stSidebarNav"] a,
+[data-testid="stSidebarNav"] a span {
+    color: #F5F0E8 !important;
+}
+[data-testid="stSidebarNav"] a:hover,
+[data-testid="stSidebarNav"] a:hover span {
+    color: #1EBDA4 !important;
+}
+/* Active page: teal text + subtle highlight bar */
+[data-testid="stSidebarNav"] a[aria-current="page"],
+[data-testid="stSidebarNav"] a[aria-current="page"] span {
+    color: #1EBDA4 !important;
+    font-weight: 600;
+}
+[data-testid="stSidebarNav"] a[aria-current="page"] {
+    background-color: rgba(30, 189, 164, 0.12);
+    border-radius: 6px;
+}
 </style>
 """
 
