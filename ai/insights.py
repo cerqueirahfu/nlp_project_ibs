@@ -1,4 +1,4 @@
-"""Prompt building + AI calls for PricePulse, on top of `ai.bedrock_client`.
+"""Prompt building + AI calls for PricePulse, on top of `ai.llm_client`.
 
 Both the Dashboard summary button and the chat page funnel through here so the
 prompts (and the compact, token-cheap data context) live in one place.
@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import pandas as pd
 
-from ai.bedrock_client import complete
+from ai.llm_client import complete
 
 SYSTEM = (
     "You are PricePulse, an analytics assistant for an Amazon-electronics review "

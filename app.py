@@ -19,7 +19,7 @@ import altair as alt
 import pandas as pd
 import streamlit as st
 
-from ai.bedrock_client import BedrockError, available
+from ai.llm_client import LLMError, available
 from ai.insights import summarize
 from utils.helpers import (
     ALL,
@@ -145,12 +145,12 @@ def main() -> None:
             with st.spinner("Asking the model…"):
                 try:
                     st.markdown(summarize(filtered, scope_label))
-                except BedrockError as exc:
+                except LLMError as exc:
                     st.error(str(exc))
     else:
         st.caption(
-            "✨ AI insight summary is available once AWS Bedrock access is "
-            "configured (see EC2_DEPLOYMENT_GUIDE.md)."
+            "✨ AI insight summary is available once an OpenAI API key is "
+            "configured (set the OPENAI_API_KEY environment variable)."
         )
 
     st.markdown("---")

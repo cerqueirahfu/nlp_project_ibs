@@ -1,5 +1,5 @@
 streamlit
 pandas
 pyarrow
-boto3
+openai
 plotly        # only if your dashboard uses it; remove if not

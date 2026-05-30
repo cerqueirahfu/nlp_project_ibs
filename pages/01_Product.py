@@ -16,7 +16,7 @@ import altair as alt
 import pandas as pd
 import streamlit as st
 
-from ai.bedrock_client import BedrockError, available
+from ai.llm_client import LLMError, available
 from ai.insights import summarize_reviews
 from utils.helpers import (
     ALL,
@@ -197,12 +197,12 @@ def main() -> None:
                     st.markdown(
                         summarize_reviews(full_name, titles or "", content or "")
                     )
-                except BedrockError as exc:
+                except LLMError as exc:
                     st.error(str(exc))
     else:
         st.caption(
-            "✨ AI review summary (Pros / Cons) appears here once AWS Bedrock is "
-            "configured (see EC2_DEPLOYMENT_GUIDE.md). Raw reviews below."
+            "✨ AI review summary (Pros / Cons) appears here once an OpenAI API "
+            "key is configured (set OPENAI_API_KEY). Raw reviews below."
         )
 
     with st.expander("See raw customer reviews", expanded=not available()):

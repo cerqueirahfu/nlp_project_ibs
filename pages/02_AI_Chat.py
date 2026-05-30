@@ -15,7 +15,7 @@ sys.path.insert(0, str(ROOT))
 import pandas as pd
 import streamlit as st
 
-from ai.bedrock_client import BedrockError, available
+from ai.llm_client import LLMError, available
 from ai.insights import chat
 from utils.helpers import (
     ALL,
@@ -79,9 +79,9 @@ def main() -> None:
 
     if not available():
         st.info(
-            "AI chat needs AWS Bedrock access. It works once the app runs on EC2 "
-            "with the IAM role from EC2_DEPLOYMENT_GUIDE.md (step C), or locally "
-            "after `aws configure` + `pip install boto3`."
+            "AI chat needs an OpenAI API key. Set the `OPENAI_API_KEY` "
+            "environment variable (locally or on EC2) and `pip install openai`, "
+            "then reload."
         )
         return
 
@@ -104,7 +104,7 @@ def main() -> None:
                     answer = chat(history, filtered, scope_label)
                     st.markdown(answer)
                     history.append({"role": "assistant", "content": answer})
-                except BedrockError as exc:
+                except LLMError as exc:
                     st.error(str(exc))
                     history.pop()  # drop the unanswered user turn
 
