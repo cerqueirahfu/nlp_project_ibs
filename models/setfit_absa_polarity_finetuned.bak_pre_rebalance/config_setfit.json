@@ -1,0 +1,10 @@
+{
+  "normalize_embeddings": false,
+  "span_context": 3,
+  "labels": [
+    "negative",
+    "neutral",
+    "positive"
+  ],
+  "spacy_model": "en_core_web_sm"
+}

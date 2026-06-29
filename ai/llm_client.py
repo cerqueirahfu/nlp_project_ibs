@@ -13,9 +13,13 @@ Design goals:
   that the UI surfaces.
 
 Config via environment variables (all optional except the key):
-    OPENAI_API_KEY   required for AI features to work
-    OPENAI_MODEL     default: gpt-4o-mini  (cheap + capable; ~$0.15/$0.60 per Mtok)
-    OPENAI_BASE_URL  optional; for Azure/OpenAI-compatible gateways
+    OPENAI_API_KEY      required for AI features to work
+    OPENAI_MODEL        default: gpt-4o-mini  (cheap + capable; ~$0.15/$0.60 per Mtok)
+    OPENAI_BASE_URL     optional; for Azure/OpenAI-compatible gateways
+    OPENAI_TIMEOUT      per-request timeout in seconds (default: 30) so a slow
+                        response can't hang the Streamlit spinner forever
+    OPENAI_MAX_RETRIES  retries on transient errors (rate limit / connection),
+                        with the SDK's exponential backoff (default: 3)
 """
 from __future__ import annotations
 
@@ -23,6 +27,8 @@ import os
 from functools import lru_cache
 
 DEFAULT_MODEL = "gpt-4o-mini"
+DEFAULT_TIMEOUT = 30.0      # seconds; bounds how long a call can block the UI
+DEFAULT_MAX_RETRIES = 3     # SDK retries transient errors with exponential backoff
 
 
 class LLMError(RuntimeError):
@@ -31,6 +37,20 @@ class LLMError(RuntimeError):
 
 def model_id() -> str:
     return os.environ.get("OPENAI_MODEL", DEFAULT_MODEL)
+
+
+def _timeout() -> float:
+    try:
+        return float(os.environ.get("OPENAI_TIMEOUT", DEFAULT_TIMEOUT))
+    except (TypeError, ValueError):
+        return DEFAULT_TIMEOUT
+
+
+def _max_retries() -> int:
+    try:
+        return int(os.environ.get("OPENAI_MAX_RETRIES", DEFAULT_MAX_RETRIES))
+    except (TypeError, ValueError):
+        return DEFAULT_MAX_RETRIES
 
 
 @lru_cache(maxsize=1)
@@ -46,8 +66,11 @@ def _client():
             "The `openai` package is not installed. Run `pip install openai` "
             "to enable AI features."
         ) from exc
+    kwargs = {"timeout": _timeout(), "max_retries": _max_retries()}
     base_url = os.environ.get("OPENAI_BASE_URL")
-    return OpenAI(base_url=base_url) if base_url else OpenAI()
+    if base_url:
+        kwargs["base_url"] = base_url
+    return OpenAI(**kwargs)
 
 
 @lru_cache(maxsize=1)
@@ -80,6 +103,7 @@ def complete(
     try:
         from openai import (
             APIConnectionError,
+            APITimeoutError,
             AuthenticationError,
             NotFoundError,
             OpenAIError,
@@ -106,6 +130,11 @@ def complete(
     except RateLimitError as exc:
         raise LLMError(
             "OpenAI rate limit or insufficient credit. Check your account usage/billing."
+        ) from exc
+    except APITimeoutError as exc:  # subclass of APIConnectionError — must come first
+        raise LLMError(
+            f"OpenAI timed out after {_timeout():.0f}s. Try again, narrow the "
+            "selection, or raise OPENAI_TIMEOUT."
         ) from exc
     except NotFoundError as exc:
         raise LLMError(

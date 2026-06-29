@@ -62,11 +62,19 @@
     }
   ],
   "normalizer": {
-    "type": "BertNormalizer",
-    "clean_text": true,
-    "handle_chinese_chars": true,
-    "strip_accents": null,
-    "lowercase": true
+    "type": "Sequence",
+    "normalizers": [
+      {
+        "type": "Lowercase"
+      },
+      {
+        "type": "BertNormalizer",
+        "clean_text": true,
+        "handle_chinese_chars": true,
+        "strip_accents": null,
+        "lowercase": true
+      }
+    ]
   },
   "pre_tokenizer": {
     "type": "BertPreTokenizer"

@@ -12,8 +12,22 @@ DEFAULT_RESULTS_PATH = ROOT / "results.parquet"
 DEFAULT_PRODUCTS_PATH = ROOT / "products.parquet"
 
 DISCOUNT_TIERS = ("0-15%", "15-30%", "30-50%", "50%+")
+LOW_DISCOUNT_TIERS = ("0-15%", "15-30%")
 HIGH_DISCOUNT_TIERS = ("30-50%", "50%+")
 ALL = "All"
+
+# One-line product explainer (Finding 1) and the aspect-sentiment glossary
+# (reused by the dashboard heading and tooltips so the wording stays in sync).
+TAGLINE = (
+    "PricePulse analyzes how product discounts relate to aspect-level customer "
+    "sentiment in Amazon electronics reviews."
+)
+ASPECT_HELP = (
+    "Aspect-based sentiment looks at *what* a review praises or complains about — "
+    "specific aspects like battery, quality, performance, durability, delivery, "
+    "value, or sound — instead of one overall score. Each sentence mentioning an "
+    "aspect is classified positive, neutral, or negative, then counted up here."
+)
 
 SIDEBAR_CSS = """
 <style>
@@ -73,6 +87,31 @@ def load_results() -> pd.DataFrame | None:
 def load_products() -> pd.DataFrame | None:
     uri = _resolve("PRODUCTS_S3_URI", DEFAULT_PRODUCTS_PATH)
     return pd.read_parquet(uri) if uri else None
+
+
+def tier_group_summary(df: pd.DataFrame, tiers: tuple[str, ...]) -> dict | None:
+    """Summarize sentiment for one discount band (e.g. low or high tiers).
+
+    Returns counts, shares (positive/neutral/negative, summing to 100%), the
+    top-negative aspect, and total mentions — or None if no data in that band.
+    Used by the dashboard's side-by-side discount comparison (Finding 2).
+    """
+    band = df[df["discount_group"].astype(str).isin(tiers)]
+    total = int(band["total"].sum())
+    if total == 0:
+        return None
+    pos, neu, neg = (int(band[c].sum()) for c in ("positive", "neutral", "negative"))
+    by_aspect = band.groupby("aspect", observed=True)[["negative", "total"]].sum()
+    by_aspect["neg_share"] = by_aspect["negative"] / by_aspect["total"].clip(lower=1)
+    top_neg = by_aspect.sort_values("neg_share", ascending=False)
+    return {
+        "total": total,
+        "products": int(band["product_id"].nunique()),
+        "pos": pos, "neu": neu, "neg": neg,
+        "pos_share": pos / total, "neu_share": neu / total, "neg_share": neg / total,
+        "top_neg_aspect": top_neg.index[0],
+        "top_neg_aspect_share": float(top_neg["neg_share"].iloc[0]),
+    }
 
 
 def require_data(*dfs: pd.DataFrame | None) -> None:

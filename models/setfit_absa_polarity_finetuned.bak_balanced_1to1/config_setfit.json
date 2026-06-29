@@ -1,10 +1,10 @@
 {
   "spacy_model": "en_core_web_sm",
+  "span_context": 3,
   "labels": [
     "negative",
     "neutral",
     "positive"
   ],
-  "span_context": 3,
   "normalize_embeddings": false
 }

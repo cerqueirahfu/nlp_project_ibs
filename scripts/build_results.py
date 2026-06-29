@@ -15,6 +15,8 @@ Smoke test on a small slice first (recommended):
 from __future__ import annotations
 
 import argparse
+import json
+import shutil
 import sys
 import time
 from pathlib import Path
@@ -46,6 +48,52 @@ PRODUCT_COLS = [
 ]
 
 
+def _span_columns(sentences_df: pd.DataFrame) -> list[str]:
+    """Column set a chunk's span DataFrame must have, so empty and non-empty
+    chunk checkpoints concat cleanly. Mirrors attach_predictions' output order."""
+    return list(sentences_df.columns) + ["span", "polarity", "aspect"]
+
+
+def _predict_chunk_safe(chunk: list[str]) -> list:
+    """Predict on a chunk; if the batch raises, isolate the bad sentence(s).
+
+    A single malformed sentence shouldn't cost the whole 500-sentence batch, so
+    on failure we fall back to per-sentence inference and skip only the sentences
+    that actually error (recording an empty prediction so alignment is preserved).
+    """
+    try:
+        return predict(chunk)
+    except Exception as exc:  # noqa: BLE001 - survive any model/spacy error
+        print(f"  ! batch failed ({exc}); retrying sentence-by-sentence", flush=True)
+        preds: list = []
+        for s in chunk:
+            try:
+                preds.extend(predict([s]))
+            except Exception as exc2:  # noqa: BLE001
+                print(f"  ! skipping poison sentence ({exc2}): {s[:80]!r}", flush=True)
+                preds.append([])
+        return preds
+
+
+def _prepare_checkpoint_dir(ckpt_dir: Path, n_sentences: int, chunk_size: int) -> None:
+    """Create/validate the checkpoint dir; clear it if the inputs changed.
+
+    A manifest pins the run to a (n_sentences, chunk_size) pair so a resume only
+    reuses chunks that belong to the *same* dataset slice. Change --limit or the
+    data and stale chunks are dropped instead of being silently reused.
+    """
+    manifest = ckpt_dir / "manifest.json"
+    current = {"n_sentences": n_sentences, "chunk_size": chunk_size}
+    if manifest.exists():
+        previous = json.loads(manifest.read_text())
+        if previous != current:
+            print(f"  checkpoint inputs changed {previous} -> {current}; "
+                  "clearing stale checkpoints")
+            shutil.rmtree(ckpt_dir)
+    ckpt_dir.mkdir(parents=True, exist_ok=True)
+    manifest.write_text(json.dumps(current))
+
+
 def aggregate(spans_df: pd.DataFrame) -> pd.DataFrame:
     if spans_df.empty:
         return spans_df
@@ -71,6 +119,12 @@ def main() -> None:
     parser.add_argument("--products-out", default="products.parquet")
     parser.add_argument("--limit", type=int, default=None,
                         help="Cap reviews processed; use for a fast smoke test before the full run.")
+    parser.add_argument("--checkpoint-dir", default=".absa_checkpoints",
+                        help="Where per-chunk ABSA outputs are saved so an "
+                             "interrupted run resumes instead of restarting.")
+    parser.add_argument("--keep-checkpoints", action="store_true",
+                        help="Keep the checkpoint dir after a successful run "
+                             "(default: delete it once results are written).")
     args = parser.parse_args()
 
     t0 = time.time()
@@ -84,19 +138,50 @@ def main() -> None:
 
     sentences = sentences_df["sentence"].tolist()
     n = len(sentences)
+    span_cols = _span_columns(sentences_df)
+
+    ckpt_dir = Path(args.checkpoint_dir)
+    _prepare_checkpoint_dir(ckpt_dir, n, CHUNK_SIZE)
+
+    n_chunks = (n + CHUNK_SIZE - 1) // CHUNK_SIZE
     print(f"[{time.time()-t0:5.1f}s] running ABSA inference on {n} sentences "
-          f"in chunks of {CHUNK_SIZE}...")
-    preds: list = []
-    for start in range(0, n, CHUNK_SIZE):
+          f"in {n_chunks} chunks of {CHUNK_SIZE} (checkpoints in {ckpt_dir}/)...")
+
+    span_frames: list[pd.DataFrame] = []
+    inferred = 0          # sentences actually run this session (excludes resumed)
+    infer_t0: float | None = None  # timer starts at the first real inference
+    for idx, start in enumerate(range(0, n, CHUNK_SIZE)):
+        cpath = ckpt_dir / f"chunk_{idx:05d}.parquet"
+        if cpath.exists():
+            span_frames.append(pd.read_parquet(cpath))
+            print(f"[{time.time()-t0:5.1f}s] chunk {idx+1}/{n_chunks} resumed "
+                  "from checkpoint", flush=True)
+            continue
+
+        if infer_t0 is None:
+            infer_t0 = time.time()
         chunk = sentences[start:start + CHUNK_SIZE]
-        preds.extend(predict(chunk))
-        done = start + len(chunk)
-        elapsed = time.time() - t0
-        rate = done / elapsed if elapsed else 0
-        eta = (n - done) / rate if rate else 0
-        print(f"[{elapsed:5.1f}s] ABSA {done}/{n} ({done/n*100:4.1f}%) "
-              f"~{rate:.0f} sent/s, eta {eta/60:4.1f} min", flush=True)
-    spans_df = attach_predictions(sentences_df, preds)
+        chunk_df = sentences_df.iloc[start:start + CHUNK_SIZE]
+        preds = _predict_chunk_safe(chunk)
+
+        spans = attach_predictions(chunk_df, preds)
+        if spans.empty:
+            spans = pd.DataFrame(columns=span_cols)
+        spans.to_parquet(cpath, index=False)  # checkpoint before moving on
+        span_frames.append(spans)
+
+        inferred += len(chunk)
+        infer_elapsed = time.time() - infer_t0
+        rate = inferred / infer_elapsed if infer_elapsed else 0
+        eta = (n - start - len(chunk)) / rate if rate else 0
+        print(f"[{time.time()-t0:5.1f}s] chunk {idx+1}/{n_chunks} done "
+              f"({(start+len(chunk))/n*100:4.1f}%) ~{rate:.0f} sent/s, "
+              f"eta {eta/60:4.1f} min", flush=True)
+
+    spans_df = (
+        pd.concat(span_frames, ignore_index=True)
+        if span_frames else pd.DataFrame(columns=span_cols)
+    )
     print(f"[{time.time()-t0:5.1f}s] {len(spans_df)} aspect spans after keyword filter")
 
     results = aggregate(spans_df)
@@ -113,6 +198,14 @@ def main() -> None:
     products.to_parquet(products_path, index=False)
     print(f"[{time.time()-t0:5.1f}s] wrote {products_path} "
           f"({products_path.stat().st_size / 1024:.1f} KB, {len(products)} products)")
+
+    # Both parquet files are written, so the per-chunk checkpoints have served
+    # their purpose. Keep them only if asked (e.g. for debugging a run).
+    if args.keep_checkpoints:
+        print(f"[{time.time()-t0:5.1f}s] keeping checkpoints in {ckpt_dir}/")
+    else:
+        shutil.rmtree(ckpt_dir, ignore_errors=True)
+        print(f"[{time.time()-t0:5.1f}s] cleaned up checkpoints")
 
 
 if __name__ == "__main__":

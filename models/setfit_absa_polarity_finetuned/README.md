@@ -6,54 +6,29 @@ tags:
 - text-classification
 - generated_from_setfit_trainer
 widget:
-- text: slow charging, charging speed:slow charging, charging speed is not fast,not
-    happy with this product bcoz this is a highly priced as compared to its quality
-    and the wire is not actually retracted easily.
-- text: so effective price of popio cable:so effective price of popio cable is rs.500
-    for 1.5 meter cable...popio cable is 1 meters long against 1.5 meters of original
-    cable...
-- text: say clicks are noiseless, that is:i am using it from 1 month, it works decent.size
-    is bit small, so it does not provide a good ergonomic.as they say clicks are noiseless,
-    that is not true, button press sound is there.overall it's considerable and worth
-    buying it.,like,light weight and work well,good,hands down, logitech is the best
-    in mouses.
-- text: but price is slightly high:but price is slightly high for this product..,one
-    got damaged immediately,very good product if screen little bit more brighter,
-    over all nice product !,,this product is very good, its quality is also very good
-    and it proved to be very useful for children, purchased a very good product,brightness
-    is good, writing is smooth.easy to use.has lock button at behind to restrict unwanted
-    erase.butwhile writing dots apper near by drawn text and lines automatically without
-    touching there, so may b not suitable for precise calculation and maths like stuff,
-    example u writing 42 and it may appear 4.2 as dot automatically appear between
-    or near by them at certain places.dots problem more near border and corner.same
-    product same package can be seen in much lower price if you google properly.my
-    use was just for rough work soi didn't request for replace or return as seller
-    send from so far via delivery and i feel it may be uneconomical for seller to
-    receive and return via delivery service.
-- text: justifies it's value, product for:i would have really appreciate if the quality
-    of beaters can be improved coz the entire product other than this justifies it's
-    value, product for making cake cream....i have used this product more than 8 months.....no
-    issue...no complaint.....good working,it's good if used properly.,i like this
-    product.,its such a good product by kent.
+- text: recently purchased the mi power bank 3i 20000mah and:charged my samsung m53
+    twice once full charged.,i recently purchased the mi power bank 3i 20000mah and
+    have been extremely impressed with its performance.
+- text: hdmi cable for boat soundbar and lg smart:perfect hdmi cable for boat soundbar
+    and lg smart tv,this product is overpriced,value for money good quality product,quality
+    product,good ,good quality,good,it's ok to purchase for and as arc port
+- text: like it's designe speed and build quality:when we plug in mobile and then
+    in pc i am getting some kind of error but files are intact and able to copy it,i
+    like it's designe speed and build quality but there is a negetive point after
+    you flip side for 10 to 20 time you will find that tha flip cover is starting
+    to get loose,so far so good, it's early to right a review, as per my usage i will
+    update accordingly,good,user friendly
+- text: really poor in quality..a rusty:entire product including the beating machine
+    nd other pair of dough hooker is absolutely perfect but the important pair of
+    steel beater is really poor in quality..a rusty pair of beater 've been delivered
+    nd that's too very disappointing...
+- text: weight and average quality.:recommend for buy,average product light weight
+    and average quality.
 metrics:
 - accuracy
 pipeline_tag: text-classification
 library_name: setfit
 inference: false
-model-index:
-- name: SetFit Polarity Model
-  results:
-  - task:
-      type: text-classification
-      name: Text Classification
-    dataset:
-      name: Unknown
-      type: unknown
-      split: test
-    metrics:
-    - type: accuracy
-      value: 0.8636363636363636
-      name: Accuracy
 ---
 
 # SetFit Polarity Model
@@ -93,18 +68,11 @@ This model was trained within the context of a larger system for ABSA, which loo
 - **Blogpost:** [SetFit: Efficient Few-Shot Learning Without Prompts](https://huggingface.co/blog/setfit)
 
 ### Model Labels
-| Label    | Examples                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
-|:---------|:-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| positive | <ul><li>'green black tea.totally value for money.:one for coffee another for green black tea.totally value for money.'</li><li>'good iron, performance, look and:nice,good iron, performance, look and shape is very good,i like this product,yes,working well now.,nice product,acch hai,good'</li><li>"like it's designe speed and build quality:when we plug in mobile and then in pc i am getting some kind of error but files are intact and able to copy it,i like it's designe speed and build quality but there is a negetive point after you flip side for 10 to 20 time you will find that tha flip cover is starting to get loose,so far so good, it's early to right a review, as per my usage i will update accordingly,good,user friendly"</li></ul>                                                                                                                         |
-| negative | <ul><li>'and quickly loses power.:does not have enough oomph and quickly loses power.'</li><li>",value for money good quality product:perfect hdmi cable for boat soundbar and lg smart tv,this product is overpriced,value for money good quality product,quality product,good ,good quality,good,it's ok to purchase for and as arc port"</li><li>'parameters affect the performance and the difference:generally, it is worth going for the higher memory and higher ram versions as these parameters affect the performance and the difference in cost is relatively small.'</li></ul>                                                                                                                                                                                                                                                                                                 |
-| neutral  | <ul><li>"2 years, cost of which at:it puts strain on both the points, the charger side and mobile side, which again makes it vulnerable to cracks...this raises a question on longevity of the cable.....let's do some calculations.....my original oneplus cable lasted for 2 years, cost of which at present is rs.1100...."</li><li>', which means price may rise ...:the rs.1100 cable online is 1.5 meters long, which makes it easy to work on phone while it is plugged.....popio cable costs rs.400 at present but they show it 999 , which means price may rise ...'</li><li>"have to consider cost while writing review:using a short cable while charging puts strain on the cable and phone's charging port, which is damaging for both, and also decreases life of both the cable and charging port.....they say you have to consider cost while writing review..."</li></ul> |
-
-## Evaluation
-
-### Metrics
-| Label   | Accuracy |
-|:--------|:---------|
-| **all** | 0.8636   |
+| Label    | Examples                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+|:---------|:---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| negative | <ul><li>'wall clocks,charger is not good:40 290 ,charging does not last for more than 3 days with out use after full recharge,battery does not last even one week even in wall clocks,charger is not good because no idicate light after battery fully charge,get higher wattage.....'</li><li>'full recharge,battery does not last:40 290 ,charging does not last for more than 3 days with out use after full recharge,battery does not last even one week even in wall clocks,charger is not good because no idicate light after battery fully charge,get higher wattage.....'</li><li>"not true, button press sound is there.overall it:i am using it from 1 month, it works decent.size is bit small, so it does not provide a good ergonomic.as they say clicks are noiseless, that is not true, button press sound is there.overall it's considerable and worth buying it.,like,light weight and work well,good,hands down, logitech is the best in mouses."</li></ul>                                                                                        |
+| neutral  | <ul><li>'use after full recharge,battery does:40 290 ,charging does not last for more than 3 days with out use after full recharge,battery does not last even one week even in wall clocks,charger is not good because no idicate light after battery fully charge,get higher wattage.....'</li><li>'battery drain revisit few:battery drain revisit few of the settings on your device, like animation, transition effect etc to get most out of your battery.'</li><li>"have to consider cost while writing review:using a short cable while charging puts strain on the cable and phone's charging port, which is damaging for both, and also decreases life of both the cable and charging port.....they say you have to consider cost while writing review..."</li></ul>                                                                                                                                                                                                                                                                                        |
+| positive | <ul><li>"like it's designe speed and build quality:when we plug in mobile and then in pc i am getting some kind of error but files are intact and able to copy it,i like it's designe speed and build quality but there is a negetive point after you flip side for 10 to 20 time you will find that tha flip cover is starting to get loose,so far so good, it's early to right a review, as per my usage i will update accordingly,good,user friendly"</li><li>"speed and build quality but there is:when we plug in mobile and then in pc i am getting some kind of error but files are intact and able to copy it,i like it's designe speed and build quality but there is a negetive point after you flip side for 10 to 20 time you will find that tha flip cover is starting to get loose,so far so good, it's early to right a review, as per my usage i will update accordingly,good,user friendly"</li><li>'perfect with no lag.:no more changing of cables every year or soo.,as i need for apple carplay support this is perfect with no lag.'</li></ul> |
 
 ## Uses
 
@@ -159,20 +127,20 @@ preds = model("The food was great, but the venue is just way too busy.")
 ### Training Set Metrics
 | Training set | Min | Median  | Max |
 |:-------------|:----|:--------|:----|
-| Word count   | 3   | 52.3509 | 205 |
+| Word count   | 3   | 47.1404 | 222 |
 
 | Label    | Training Sample Count |
 |:---------|:----------------------|
-| negative | 8                     |
-| neutral  | 10                    |
-| positive | 39                    |
+| negative | 52                    |
+| neutral  | 50                    |
+| positive | 126                   |
 
 ### Training Hyperparameters
 - batch_size: (16, 16)
 - num_epochs: (1, 1)
 - max_steps: -1
 - sampling_strategy: oversampling
-- num_iterations: 2
+- num_iterations: 3
 - body_learning_rate: (2e-05, 1e-05)
 - head_learning_rate: 0.01
 - loss: CosineSimilarityLoss
@@ -189,18 +157,18 @@ preds = model("The food was great, but the venue is just way too busy.")
 ### Training Results
 | Epoch  | Step | Training Loss | Validation Loss |
 |:------:|:----:|:-------------:|:---------------:|
-| 0.0667 | 1    | 0.104         | -               |
-| 1.0    | 15   | -             | 0.2075          |
+| 0.0116 | 1    | 0.1795        | -               |
+| 0.5814 | 50   | 0.137         | -               |
 
 ### Framework Versions
 - Python: 3.11.9
 - SetFit: 1.1.3
-- Sentence Transformers: 5.5.0
-- spaCy: 3.8.11
-- Transformers: 4.57.6
+- Sentence Transformers: 3.1.1
+- spaCy: 3.7.5
+- Transformers: 4.45.2
 - PyTorch: 2.12.0+cpu
-- Datasets: 4.8.5
-- Tokenizers: 0.22.2
+- Datasets: 5.0.0
+- Tokenizers: 0.20.3
 
 ## Citation
 

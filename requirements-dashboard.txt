@@ -2,4 +2,3 @@ streamlit
 pandas
 pyarrow
 openai
-plotly        # only if your dashboard uses it; remove if not

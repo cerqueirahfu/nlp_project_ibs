@@ -93,12 +93,13 @@ def main() -> None:
         cache_dir=str(MODEL_CACHE_DIR),
     )
 
+    has_eval = len(eval_ds) > 0
     training_args = TrainingArguments(
         output_dir=str(LOCAL_POLARITY_PATH / "checkpoints"),
         num_epochs=args.epochs,
         batch_size=args.batch_size,
         num_iterations=args.num_iterations,
-        eval_strategy="epoch",
+        eval_strategy="epoch" if has_eval else "no",
         save_strategy="no",
         load_best_model_at_end=False,
     )

@@ -7,6 +7,9 @@ claude.md
 data/models/
 models/setfit_absa/
 
+# Resumable ABSA build checkpoints (scripts/build_results.py)
+.absa_checkpoints/
+
 *.pkl
 *.bin
 *.safetensors
