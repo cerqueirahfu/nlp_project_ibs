@@ -190,7 +190,7 @@ def main() -> None:
         alt.Chart(sentiment_split)
         .mark_bar()
         .encode(
-            x=alt.X("Share:Q", title=None, scale=alt.Scale(domain=[0, 100])),
+            x=alt.X("Share:Q", title=None, scale=alt.Scale(domain=[0, 100]), axis=None),
             color=alt.Color(
                 "Sentiment:N",
                 scale=alt.Scale(
